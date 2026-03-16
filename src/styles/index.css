@@ -1,4 +1,5 @@
 @import './fonts.css';
+@import './tailwind.css';
 @import './theme.css';
 
 * {
@@ -6,4 +7,3 @@
     padding: 0;
     box-sizing: border-box;
   }
-  

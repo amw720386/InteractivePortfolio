@@ -3,8 +3,11 @@ import {
   FoliageInstance,
   TreeType,
 } from "./maps/foliageTilesetMap";
-import { MAP_WIDTH, MAP_HEIGHT } from "./constants";
+import { MAP_WIDTH, MAP_HEIGHT, SIGN_X, SIGN_Y } from "./constants";
 import type { Tile, Position, Animal, Decoration, House } from "./types";
+import type { DockSegment } from "./maps/dockTilesetMap";
+import type { BoatInstance } from "./maps/boatTilesetMap";
+import type { WaterDecoInstance } from "./maps/waterDecoTilesetMap";
 
 export interface MapGenerationResult {
   map: Tile[][];
@@ -14,6 +17,10 @@ export interface MapGenerationResult {
   chickenCoopPositions: Array<{ x: number; y: number }>;
   animals: Animal[];
   decorations: Decoration[];
+  dockSegments: Map<string, DockSegment>;
+  boats: BoatInstance[];
+  stoneCircles: Array<{ x: number; y: number }>;
+  waterDecorations: WaterDecoInstance[];
   playerPos: Position;
 }
 
@@ -35,6 +42,9 @@ export function generateMap(house: House | null): MapGenerationResult {
       newMap[centerY + dy][centerX + dx] = "dirt";
     }
   }
+
+  // Place sign tile to the left of the dirt patch
+  newMap[SIGN_Y][SIGN_X] = "sign";
 
   // Top-right quadrant: farming region (no random dirt patches)
   // Dirt comes only from pen 2-tile borders (handled after pen definitions)
@@ -84,9 +94,10 @@ export function generateMap(house: House | null): MapGenerationResult {
       Math.floor(Math.random() * (MAP_HEIGHT - 20)) + 10;
     const patchSize = Math.floor(Math.random() * 5) + 5;
 
-    // No dirt patches in bottom-right quadrant (flower field) or top-left quadrant (thick forest)
+    // No dirt patches in bottom-right quadrant (flower field), top-left quadrant (thick forest), or bottom-left (lake)
     if (patchCenterX >= centerX && patchCenterY >= centerY) continue;
     if (patchCenterX < centerX && patchCenterY < centerY) continue;
+    if (patchCenterX < centerX && patchCenterY >= centerY) continue;
 
     const tooCloseToHorizontalPath =
       Math.abs(patchCenterY - horizontalPathY) <=
@@ -464,11 +475,38 @@ export function generateMap(house: House | null): MapGenerationResult {
     return false;
   };
 
+  // Helper: check if near water/lake (within 2 tiles) - for trees and bushes
+  const nearWater = (
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): boolean => {
+    for (let dy = -2; dy <= height + 1; dy++) {
+      for (let dx = -2; dx <= width + 1; dx++) {
+        const checkX = x + dx;
+        const checkY = y + dy;
+        if (
+          checkX >= 0 &&
+          checkX < MAP_WIDTH &&
+          checkY >= 0 &&
+          checkY < MAP_HEIGHT
+        ) {
+          const t = newMap[checkY][checkX];
+          if (t === "water" || t === "lake") {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
   // Quadrant helpers
   const inTopRight = (x: number, y: number) => x >= centerX && y < centerY;
   const inBottomRight = (x: number, y: number) => x >= centerX && y >= centerY;
 
-  // Helper: check if position is inside any pen (including fence tiles + 1 buffer)
+  // Helper: check if position is inside any pen
   const insidePenArea = (x: number, y: number): boolean => {
     return allPens.some((pen) =>
       x >= pen.left - 1 && x <= pen.right + 1 &&
@@ -510,9 +548,9 @@ export function generateMap(house: House | null): MapGenerationResult {
     if (overlapsFoliage(tx, ty, 1, 1) || overlapsHouse(tx - 1, ty - 1, 3, 3)) continue;
 
     const rand = Math.random();
-    const treeType: TreeType = rand < 0.25 ? "forest" : rand < 0.33 ? "forestDarker" : rand < 0.48 ? "eucalyptus" : rand < 0.60 ? "willow" : rand < 0.75 ? "fruit" : rand < 0.90 ? "medium" : "small";
+    const treeType: TreeType = rand < 0.25 ? "forest" : rand < 0.33 ? "forestDarker" : rand < 0.48 ? "eucalyptus" : rand < 0.60 ? "pine" : rand < 0.75 ? "fruit" : rand < 0.90 ? "medium" : "small";
     const width = (treeType === "forest" || treeType === "forestDarker") ? 3 : treeType === "small" ? 1 : 2;
-    const height = (treeType === "forest" || treeType === "forestDarker") ? 3 : (treeType === "eucalyptus" || treeType === "willow") ? 4 : 2;
+    const height = (treeType === "forest" || treeType === "forestDarker") ? 3 : (treeType === "eucalyptus" || treeType === "pine") ? 4 : 2;
     const topLeftX = width === 1 ? tx : tx - Math.floor(width / 2);
     const topLeftY = ty - (height - 1);
 
@@ -540,9 +578,9 @@ export function generateMap(house: House | null): MapGenerationResult {
       if (overlapsFoliage(tx, ty, 1, 1) || overlapsHouse(tx - 1, ty - 1, 3, 3)) continue;
 
       const rRand = Math.random();
-      const treeType: TreeType = rRand < 0.25 ? "forest" : rRand < 0.30 ? "forestDarker" : rRand < 0.45 ? "eucalyptus" : rRand < 0.60 ? "willow" : rRand < 0.80 ? "fruit" : "medium";
+      const treeType: TreeType = rRand < 0.25 ? "forest" : rRand < 0.30 ? "forestDarker" : rRand < 0.45 ? "eucalyptus" : rRand < 0.60 ? "pine" : rRand < 0.80 ? "fruit" : "medium";
       const width = (treeType === "forest" || treeType === "forestDarker") ? 3 : 2;
-      const height = (treeType === "forest" || treeType === "forestDarker") ? 3 : (treeType === "eucalyptus" || treeType === "willow") ? 4 : 2;
+      const height = (treeType === "forest" || treeType === "forestDarker") ? 3 : (treeType === "eucalyptus" || treeType === "pine") ? 4 : 2;
       const topLeftX = tx - Math.floor(width / 2);
       const topLeftY = ty - (height - 1);
 
@@ -967,6 +1005,379 @@ export function generateMap(house: House | null): MapGenerationResult {
     }
   }
   
+  // Bottom-left quadrant: Lake area
+  const lakeCenterX = Math.floor(centerX / 2);
+  const lakeCenterY = Math.floor((centerY + MAP_HEIGHT) / 2);
+  const lakeRadiusX = 14;
+  const lakeRadiusY = 11;
+
+  // Simple seeded noise for organic lake edges
+  const lakeNoise = (x: number, y: number): number => {
+    const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    return n - Math.floor(n);
+  };
+
+  // Carve out the lake — extend by 1 tile so grass edge tiles render properly on the shore
+  for (let y = lakeCenterY - lakeRadiusY - 3; y <= lakeCenterY + lakeRadiusY + 3; y++) {
+    for (let x = lakeCenterX - lakeRadiusX - 3; x <= lakeCenterX + lakeRadiusX + 3; x++) {
+      if (x < 3 || x >= centerX - 2 || y < centerY + 3 || y >= MAP_HEIGHT - 3) continue;
+      // Skip path tiles
+      if (Math.abs(y - horizontalPathY) <= 1 || Math.abs(x - verticalPathX) <= 1) continue;
+
+      const dx = (x - lakeCenterX) / lakeRadiusX;
+      const dy = (y - lakeCenterY) / lakeRadiusY;
+      const dist = dx * dx + dy * dy;
+
+      // Add noise to the edge for organic shape
+      const edgeNoise = (lakeNoise(x, y) - 0.5) * 0.3;
+      if (dist < 0.85 + edgeNoise) {
+        newMap[y][x] = "lake";
+      }
+    }
+  }
+
+  // Add islands inside the lake — interesting path: shore→top-right island→down to mid-right→left+up to big central
+  const islands = [
+    { cx: lakeCenterX + 5, cy: lakeCenterY - 4, rx: 3.2, ry: 2.5 },    // island 0: small, top-right (moved down 1, left 1)
+    { cx: lakeCenterX + 4, cy: lakeCenterY + 5, rx: 2.5, ry: 2.2 },    // island 1: small, mid-right, lower (moved down 2)
+    { cx: lakeCenterX - 6, cy: lakeCenterY - 1, rx: 6, ry: 4.2 },      // island 2: big central island (shifted 2 left, rx +1)
+  ];
+
+  for (const island of islands) {
+    for (let y = Math.floor(island.cy - island.ry - 1); y <= Math.ceil(island.cy + island.ry + 1); y++) {
+      for (let x = Math.floor(island.cx - island.rx - 1); x <= Math.ceil(island.cx + island.rx + 1); x++) {
+        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) continue;
+        if (newMap[y][x] !== "lake") continue;
+
+        const dx = (x - island.cx) / island.rx;
+        const dy = (y - island.cy) / island.ry;
+        const dist = dx * dx + dy * dy;
+        const noise = (lakeNoise(x * 3.7, y * 2.3) - 0.5) * 0.12;
+
+        if (dist < 0.85 + noise) {
+          newMap[y][x] = Math.random() > 0.5 ? "grass" : "grass2";
+        }
+      }
+    }
+  }
+
+  // ---- Island edge cleanup: remove 1x1 grass peninsulas that block movement ----
+  // Any island grass tile with fewer than 2 cardinal grass neighbors is a thin jut — convert back to lake
+  // Run iteratively until stable (removing one jut may expose another)
+  let islandCleanupChanged = true;
+  while (islandCleanupChanged) {
+    islandCleanupChanged = false;
+    for (const island of islands) {
+      for (let y = Math.floor(island.cy - island.ry - 2); y <= Math.ceil(island.cy + island.ry + 2); y++) {
+        for (let x = Math.floor(island.cx - island.rx - 2); x <= Math.ceil(island.cx + island.rx + 2); x++) {
+          if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) continue;
+          if (newMap[y][x] !== "grass" && newMap[y][x] !== "grass2") continue;
+
+          // Check if this tile is walkable-grass-like (grass or dock count as walkable for width checks)
+          const isWalkable = (tx: number, ty: number) =>
+            tx >= 0 && tx < MAP_WIDTH && ty >= 0 && ty < MAP_HEIGHT &&
+            (newMap[ty][tx] === "grass" || newMap[ty][tx] === "grass2" || newMap[ty][tx] === "dock");
+
+          // Count cardinal grass neighbors
+          let grassNeighbors = 0;
+          if (isWalkable(x - 1, y)) grassNeighbors++;
+          if (isWalkable(x + 1, y)) grassNeighbors++;
+          if (isWalkable(x, y - 1)) grassNeighbors++;
+          if (isWalkable(x, y + 1)) grassNeighbors++;
+
+          // Remove if fewer than 2 neighbors (peninsula/isolated tile)
+          if (grassNeighbors < 2) {
+            newMap[y][x] = "lake";
+            islandCleanupChanged = true;
+            continue;
+          }
+
+          // Also remove if this tile forms a 1-wide strip in either axis.
+          // With the 0.5-tile water collision extension, a 1-wide grass strip between
+          // two water tiles is impassable — the player collides with water on both sides.
+          const grassUp = isWalkable(x, y - 1);
+          const grassDown = isWalkable(x, y + 1);
+          const grassLeft = isWalkable(x - 1, y);
+          const grassRight = isWalkable(x + 1, y);
+
+          // 1-wide vertically: no grass above AND no grass below (only extends horizontally)
+          // 1-wide horizontally: no grass left AND no grass right (only extends vertically)
+          if ((!grassUp && !grassDown) || (!grassLeft && !grassRight)) {
+            newMap[y][x] = "lake";
+            islandCleanupChanged = true;
+          }
+        }
+      }
+    }
+  }
+
+  // Compute bridge connection points
+  const b1Y = Math.round(islands[0].cy);                          // bridge 1 horizontal Y
+  const b2X = Math.round(Math.min(islands[0].cx, islands[1].cx)); // bridge 2 vertical X
+  const b3Y = Math.round(islands[1].cy);                          // bridge 3 horizontal Y
+  const b3CornerX = Math.round(islands[2].cx + 1);                // bridge 3 corner X
+
+  const i0RightX = Math.round(islands[0].cx + islands[0].rx);
+  const i0BottomY = Math.round(islands[0].cy + islands[0].ry);
+  const i1TopY = Math.round(islands[1].cy - islands[1].ry);
+  const i1LeftX = Math.round(islands[1].cx - islands[1].rx);
+  const i2BottomY = Math.round(islands[2].cy + islands[2].ry);
+
+  // Stamp guaranteed grass at all bridge connection points so no grass pokes out
+  // For horizontal bridges: stamp a 1-wide x 2-tall column of grass at the connection edge
+  // For vertical bridges: stamp a 2-wide x 1-tall row of grass at the connection edge
+  const stampGrass = (x: number, y: number) => {
+    if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
+      if (newMap[y][x] === "lake") {
+        newMap[y][x] = Math.random() > 0.5 ? "grass" : "grass2";
+      }
+    }
+  };
+
+  // Island 0: right edge (horizontal bridge 1 exit) — stamp 1x2
+  stampGrass(i0RightX, b1Y); stampGrass(i0RightX, b1Y + 1);
+  // Island 0: bottom edge (vertical bridge 2 exit) — stamp 2x1
+  stampGrass(b2X, i0BottomY); stampGrass(b2X + 1, i0BottomY);
+  // Island 1: top edge (vertical bridge 2 entry) — stamp 2x1
+  stampGrass(b2X, i1TopY); stampGrass(b2X + 1, i1TopY);
+  // Island 1: left edge (horizontal bridge 3 exit) — stamp 1x2
+  stampGrass(i1LeftX, b3Y); stampGrass(i1LeftX, b3Y + 1);
+  // Island 2: bottom edge (vertical bridge 3 entry) — stamp 2x1
+  stampGrass(b3CornerX, i2BottomY); stampGrass(b3CornerX + 1, i2BottomY);
+
+  // Also stamp grass on the shore side where bridge 1 connects (1x2)
+  // And stamp grass extending one tile INTO each island at connection points
+  // to guarantee no single-tile grass poke-out
+  stampGrass(i0RightX - 1, b1Y); stampGrass(i0RightX - 1, b1Y + 1);
+  stampGrass(b2X, i0BottomY - 1); stampGrass(b2X + 1, i0BottomY - 1);
+  stampGrass(b2X, i1TopY + 1); stampGrass(b2X + 1, i1TopY + 1);
+  stampGrass(i1LeftX + 1, b3Y); stampGrass(i1LeftX + 1, b3Y + 1);
+  stampGrass(b3CornerX, i2BottomY - 1); stampGrass(b3CornerX + 1, i2BottomY - 1);
+
+  // Stone circle at the center of island 2 (rendered in tile layer, not depth-sorted)
+  // Computed BEFORE island foliage so we can create an exclusion zone around it
+  const i2 = islands[2];
+  const stoneCircleX = Math.floor(i2.cx);
+  const stoneCircleY = Math.floor(i2.cy);
+  const stoneCircles = [{ x: stoneCircleX, y: stoneCircleY }];
+
+  // Helper: check if a position is within the stone circle exclusion zone (2x2 circle + 2-tile buffer)
+  const STONE_CIRCLE_BUFFER = 2;
+  const isNearStoneCircle = (fx: number, fy: number, fw = 1, fh = 1): boolean => {
+    for (const sc of stoneCircles) {
+      if (
+        fx + fw > sc.x - STONE_CIRCLE_BUFFER &&
+        fx < sc.x + 2 + STONE_CIRCLE_BUFFER &&
+        fy + fh > sc.y - STONE_CIRCLE_BUFFER &&
+        fy < sc.y + 2 + STONE_CIRCLE_BUFFER
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Add small foliage on the islands — only bushes, no flowers or mushrooms
+  // (grass foliage textures already render naturally via the base grass tile system)
+  for (const island of islands) {
+    for (let y = Math.floor(island.cy - island.ry); y <= Math.ceil(island.cy + island.ry); y++) {
+      for (let x = Math.floor(island.cx - island.rx); x <= Math.ceil(island.cx + island.rx); x++) {
+        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) continue;
+        if (newMap[y][x] !== "grass" && newMap[y][x] !== "grass2") continue;
+        if (isNearStoneCircle(x, y)) continue;
+
+        const noise = ((x * 73856093 + y * 19349663) >>> 0) % 100;
+        if (noise < 12 && !adjacentToBush(x, y)) {
+          allFoliage.push({
+            x, y, type: "bush",
+            variant: Math.floor(Math.random() * FOLIAGE_TILESET.BUSHES.length),
+            width: 1, height: 1,
+          });
+        }
+      }
+    }
+  }
+
+  // NPC: standing to the right of the stone circle on island 2, facing down
+  const npcs: Array<{ x: number; y: number; direction: number; frame: number }> = [
+    { x: stoneCircleX + 2.5, y: stoneCircleY + 0.5, direction: 0, frame: 0 },
+  ];
+
+  // Boat: placed to the LEFT of where bridge 3 meets island 2's bottom edge
+  // Moved up 1 and right 2 from original position for better alignment
+  const boatX = b3CornerX - 3;
+  const boatY = i2BottomY - 1;
+  const boats: BoatInstance[] = [{ x: boatX, y: boatY }];
+
+  // ---- Build bridges ----
+  const dockSegments = new Map<string, DockSegment>();
+
+  // Helper: place a horizontal bridge (2 tiles tall: top at bridgeY, bottom at bridgeY+1)
+  // FORCES all tiles in path to dock — any stray grass from island noise is overwritten
+  const placeHorizontalBridge = (fromX: number, toX: number, bridgeY: number) => {
+    const minX = Math.min(fromX, toX);
+    const maxX = Math.max(fromX, toX);
+    for (let x = minX; x <= maxX; x++) {
+      for (const rowOffset of [0, 1]) {
+        const row = bridgeY + rowOffset;
+        if (x >= 0 && x < MAP_WIDTH && row >= 0 && row < MAP_HEIGHT) {
+          newMap[row][x] = "dock";
+          dockSegments.set(`${x},${row}`, {
+            orientation: "horizontal",
+            subTile: rowOffset === 0 ? "top" : "bottom",
+          });
+        }
+      }
+    }
+  };
+
+  // Helper: place a vertical bridge (2 tiles wide: left at bridgeX, right at bridgeX+1)
+  // FORCES all tiles in path to dock — any stray grass from island noise is overwritten
+  const placeVerticalBridge = (fromY: number, toY: number, bridgeX: number) => {
+    const minY = Math.min(fromY, toY);
+    const maxY = Math.max(fromY, toY);
+    for (let y = minY; y <= maxY; y++) {
+      for (const colOffset of [0, 1]) {
+        const col = bridgeX + colOffset;
+        if (col >= 0 && col < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
+          newMap[y][col] = "dock";
+          dockSegments.set(`${col},${y}`, {
+            orientation: "vertical",
+            subTile: colOffset === 0 ? "left" : "right",
+          });
+        }
+      }
+    }
+  };
+
+  // Bridge 1: East shore → island 0 (horizontal)
+  // Scan from shore inward to find where lake starts — bridge spans only over lake/water
+  let bridge1DockStart = i0RightX + 1; // default: just right of island grass
+  for (let x = centerX - 3; x > i0RightX; x--) {
+    if (newMap[b1Y]?.[x] === "lake" || newMap[b1Y + 1]?.[x] === "lake") {
+      bridge1DockStart = x;
+      break;
+    }
+  }
+  // Bridge spans from the shore-side lake edge to just past the island grass edge
+  placeHorizontalBridge(bridge1DockStart, i0RightX + 1, b1Y);
+
+  // Bridge 2: island 0 → island 1 (vertical)
+  // Spans from one tile past island 0 bottom grass to one tile before island 1 top grass
+  placeVerticalBridge(i0BottomY + 1, i1TopY - 1, b2X);
+
+  // Bridge 3: island 1 → island 2 (L-shaped: horizontal left arm, then vertical up arm)
+  // Horizontal arm: extends from island 1 left edge all the way through the corner columns
+  // This covers the horizontal run AND the full 2-row height at the corner
+  placeHorizontalBridge(i1LeftX - 1, b3CornerX + 1, b3Y);
+
+  // Vertical arm: from island 2 bottom edge down through b3Y+1, covering the full 2x2 corner block
+  // Overwrites the corner area with vertical texture so the turn looks like a continuous vertical bridge
+  placeVerticalBridge(i2BottomY + 1, b3Y + 1, b3CornerX);
+
+  // ---- Post-bridge cleanup: ensure dock only touches grass at clean 1x2/2x1 endpoints ----
+  // Any grass tile adjacent to a dock tile that isn't part of a proper pair gets converted to dock
+  // This prevents any 1x1 grass juts along the bridge edges
+  let cleanupChanged = true;
+  while (cleanupChanged) {
+    cleanupChanged = false;
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      for (let x = 0; x < MAP_WIDTH; x++) {
+        if (newMap[y][x] !== "grass" && newMap[y][x] !== "grass2") continue;
+
+        // Check if this grass tile is adjacent (4-directional) to any dock tile
+        const adjDock =
+          (x > 0 && newMap[y][x - 1] === "dock") ||
+          (x < MAP_WIDTH - 1 && newMap[y][x + 1] === "dock") ||
+          (y > 0 && newMap[y - 1][x] === "dock") ||
+          (y < MAP_HEIGHT - 1 && newMap[y + 1][x] === "dock");
+
+        if (!adjDock) continue;
+
+        // This grass touches dock. Check if it's part of a valid 1x2 or 2x1 grass pair.
+        // Horizontal bridge endpoints need a 1x2 vertical grass pair (same column, adjacent rows).
+        // Vertical bridge endpoints need a 2x1 horizontal grass pair (same row, adjacent columns).
+        const dockLeft = x > 0 && newMap[y][x - 1] === "dock";
+        const dockRight = x < MAP_WIDTH - 1 && newMap[y][x + 1] === "dock";
+        const dockUp = y > 0 && newMap[y - 1][x] === "dock";
+        const dockDown = y < MAP_HEIGHT - 1 && newMap[y + 1][x] === "dock";
+
+        let isValidEndpoint = false;
+
+        if (dockLeft || dockRight) {
+          // Horizontal bridge endpoint needs a 1x2 vertical grass pair
+          // Check that both (x, y) and its vertical partner are grass, and the partner also touches dock the same way
+          if (y < MAP_HEIGHT - 1 && (newMap[y + 1][x] === "grass" || newMap[y + 1][x] === "grass2")) {
+            // This could be the top of the pair
+            const partnerAlsoTouchesDock =
+              (dockLeft && x > 0 && newMap[y + 1][x - 1] === "dock") ||
+              (dockRight && x < MAP_WIDTH - 1 && newMap[y + 1][x + 1] === "dock");
+            if (partnerAlsoTouchesDock) isValidEndpoint = true;
+          }
+          if (y > 0 && (newMap[y - 1][x] === "grass" || newMap[y - 1][x] === "grass2")) {
+            // This could be the bottom of the pair
+            const partnerAlsoTouchesDock =
+              (dockLeft && x > 0 && newMap[y - 1][x - 1] === "dock") ||
+              (dockRight && x < MAP_WIDTH - 1 && newMap[y - 1][x + 1] === "dock");
+            if (partnerAlsoTouchesDock) isValidEndpoint = true;
+          }
+        }
+
+        if (dockUp || dockDown) {
+          // Vertical bridge endpoint needs a 2x1 horizontal grass pair
+          if (x < MAP_WIDTH - 1 && (newMap[y][x + 1] === "grass" || newMap[y][x + 1] === "grass2")) {
+            const partnerAlsoTouchesDock =
+              (dockUp && y > 0 && newMap[y - 1][x + 1] === "dock") ||
+              (dockDown && y < MAP_HEIGHT - 1 && newMap[y + 1][x + 1] === "dock");
+            if (partnerAlsoTouchesDock) isValidEndpoint = true;
+          }
+          if (x > 0 && (newMap[y][x - 1] === "grass" || newMap[y][x - 1] === "grass2")) {
+            const partnerAlsoTouchesDock =
+              (dockUp && y > 0 && newMap[y - 1][x - 1] === "dock") ||
+              (dockDown && y < MAP_HEIGHT - 1 && newMap[y + 1][x - 1] === "dock");
+            if (partnerAlsoTouchesDock) isValidEndpoint = true;
+          }
+        }
+
+        if (!isValidEndpoint) {
+          // This grass tile touches dock but isn't part of a clean pair → convert to dock
+          newMap[y][x] = "dock";
+          // Copy the segment orientation from the adjacent dock tile
+          const adjacentKey = dockLeft ? `${x - 1},${y}` : dockRight ? `${x + 1},${y}` : dockUp ? `${x},${y - 1}` : `${x},${y + 1}`;
+          const adjSegment = dockSegments.get(adjacentKey);
+          if (adjSegment) {
+            dockSegments.set(`${x},${y}`, { ...adjSegment });
+          }
+          cleanupChanged = true;
+        }
+      }
+    }
+  }
+
+  // Remove any foliage that ended up on lake or dock tiles
+  for (let i = allFoliage.length - 1; i >= 0; i--) {
+    const f = allFoliage[i];
+    let shouldRemove = false;
+    // Remove ALL foliage that is directly on lake tiles
+    for (let fy = 0; fy < f.height && !shouldRemove; fy++) {
+      for (let fx = 0; fx < f.width && !shouldRemove; fx++) {
+        const tile = newMap[f.y + fy]?.[f.x + fx];
+        if (tile === "lake" || tile === "dock") {
+          shouldRemove = true;
+        }
+      }
+    }
+    // Additionally remove trees and bushes within 2 tiles of lake (but allow flowers/mushrooms/sunflowers)
+    if (!shouldRemove && (f.type === "tree" || f.type === "bush" || f.type === "stump")) {
+      if (nearWater(f.x, f.y, f.width, f.height)) {
+        shouldRemove = true;
+      }
+    }
+    if (shouldRemove) {
+      allFoliage.splice(i, 1);
+    }
+  }
+
   // Remove foliage that overlaps with chicken coop positions
   const coopPenCandidates = [pen1, pen3];
   for (let i = allFoliage.length - 1; i >= 0; i--) {
@@ -983,6 +1394,17 @@ export function generateMap(house: House | null): MapGenerationResult {
       }
     }
   }
+
+  // Add pine tree on island 2 AFTER the nearWater cleanup
+  // (otherwise it gets removed because islands are small and all tiles are within 2 of water)
+  // Pine is 2 wide × 4 tall, placed in the top-left area of the island
+  const pineTreeX = Math.floor(islands[2].cx - islands[2].rx * 0.35) - 1;
+  const pineTreeY = Math.floor(islands[2].cy - islands[2].ry * 0.5) - 1;
+  allFoliage.push({
+    x: pineTreeX, y: pineTreeY, type: "tree",
+    treeType: "pine" as TreeType,
+    width: 2, height: 4,
+  });
 
   // Create fenced pens in top-right quadrant
   const buildFencePen = (
@@ -1079,6 +1501,20 @@ export function generateMap(house: House | null): MapGenerationResult {
 
   // Helper: check if a position is clear of collidable objects (1-tile buffer)
   const isPositionClearOfCollisions = (px: number, py: number, buffer: number = 1.0): boolean => {
+    // Check if near any water/lake tile (within 2 tiles)
+    const waterBuffer = 2;
+    for (let dy = -waterBuffer; dy <= waterBuffer; dy++) {
+      for (let dx = -waterBuffer; dx <= waterBuffer; dx++) {
+        const checkX = Math.floor(px) + dx;
+        const checkY = Math.floor(py) + dy;
+        if (checkX >= 0 && checkX < MAP_WIDTH && checkY >= 0 && checkY < MAP_HEIGHT) {
+          const t = newMap[checkY][checkX];
+          if (t === "water" || t === "lake") {
+            return false;
+          }
+        }
+      }
+    }
     for (const item of allFoliage) {
       if (item.type === "tree") {
         const treeCenterX = item.x + (item.width - 1) / 2 + 0.5;
@@ -1161,7 +1597,7 @@ export function generateMap(house: House | null): MapGenerationResult {
         type: pa.type,
         x: pos.x,
         y: pos.y,
-        direction: Math.floor(Math.random() * 4),
+        direction: Math.random() > 0.5 ? 3 : 2, // side-view sprites: 2=left, 3=right
         frame: 0,
         speed,
         targetX: pos.x,
@@ -1179,7 +1615,7 @@ export function generateMap(house: House | null): MapGenerationResult {
       Math.random() > 0.5 ? "chicken" : "cow";
     const pos = findClearPosition(10, 10, MAP_WIDTH - 10, MAP_HEIGHT - 10, 30);
 
-    const direction = Math.floor(Math.random() * 4);
+    const direction = Math.random() > 0.5 ? 3 : 2; // side-view sprites: 2=left, 3=right
     const frame = 0;
     const speed =
       type === "cow" ? 0.003 : Math.random() * 0.008 + 0.005;
@@ -1196,14 +1632,141 @@ export function generateMap(house: House | null): MapGenerationResult {
     });
   }
 
+  // ---- Generate water decorations (rocks, reeds, lily pads, dark water patches) ----
+  const waterDecorations: WaterDecoInstance[] = [];
+  const waterDecoSet = new Set<string>(); // prevent overlaps
+
+  const isLakeTile = (tx: number, ty: number) =>
+    tx >= 0 && tx < MAP_WIDTH && ty >= 0 && ty < MAP_HEIGHT && newMap[ty][tx] === "lake";
+
+  const isAdjacentToGrass = (tx: number, ty: number) => {
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const nx = tx + dx, ny = ty + dy;
+      if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+        const t = newMap[ny][nx];
+        if (t === "grass" || t === "grass2") return true;
+      }
+    }
+    return false;
+  };
+
+  // Build a set of tiles occupied by boats (3 wide × 2 tall each) so water decos don't spawn there
+  const boatTileSet = new Set<string>();
+  for (const boat of boats) {
+    for (let dy = 0; dy < 2; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        boatTileSet.add(`${boat.x + dx},${boat.y + dy}`);
+      }
+    }
+  }
+
+  // Collect all lake tiles
+  const lakeTiles: Array<{ x: number; y: number }> = [];
+  const edgeLakeTiles: Array<{ x: number; y: number }> = [];
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      if (newMap[y][x] === "lake" && !boatTileSet.has(`${x},${y}`)) {
+        lakeTiles.push({ x, y });
+        if (isAdjacentToGrass(x, y)) {
+          edgeLakeTiles.push({ x, y });
+        }
+      }
+    }
+  }
+
+  const addWaterDeco = (x: number, y: number, type: WaterDecoInstance["type"], variant: number) => {
+    const key = `${x},${y}`;
+    if (waterDecoSet.has(key)) return;
+    waterDecoSet.add(key);
+    waterDecorations.push({ x, y, type, variant });
+  };
+
+  // 1. Rock patches: pick random lake positions as cluster centers, add surrounding smaller rocks
+  const numRockClusters = Math.floor(lakeTiles.length / 40);
+  for (let i = 0; i < numRockClusters; i++) {
+    const center = lakeTiles[Math.floor(Math.random() * lakeTiles.length)];
+    // Make sure center isn't near an island or dock
+    if (!isLakeTile(center.x, center.y)) continue;
+    // Check surrounding tiles are also lake (not near island edge)
+    let allLake = true;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (!isLakeTile(center.x + dx, center.y + dy)) allLake = false;
+      }
+    }
+    if (!allLake) continue;
+
+    // Center rock: medium-big or big rock
+    const centerRand = Math.random();
+    if (centerRand < 0.3) {
+      // Big rock (2x1)
+      if (isLakeTile(center.x + 1, center.y) && !waterDecoSet.has(`${center.x + 1},${center.y}`)) {
+        addWaterDeco(center.x, center.y, "bigRock", 0);
+        waterDecoSet.add(`${center.x + 1},${center.y}`); // reserve the right tile
+      } else {
+        addWaterDeco(center.x, center.y, "rock", 3); // medium-big instead
+      }
+    } else if (centerRand < 0.65) {
+      addWaterDeco(center.x, center.y, "rock", 3); // medium-big
+    } else {
+      addWaterDeco(center.x, center.y, "rock", 2); // medium
+    }
+
+    // Surrounding rocks: 2-4 smaller rocks within 1-2 tiles
+    const numSurrounding = 2 + Math.floor(Math.random() * 3);
+    for (let j = 0; j < numSurrounding; j++) {
+      const ox = center.x + Math.floor(Math.random() * 3) - 1;
+      const oy = center.y + Math.floor(Math.random() * 3) - 1;
+      if (ox === center.x && oy === center.y) continue;
+      if (!isLakeTile(ox, oy)) continue;
+      const sizeRand = Math.random();
+      const variant = sizeRand < 0.4 ? 0 : sizeRand < 0.75 ? 1 : 2; // tiny, small, or medium
+      addWaterDeco(ox, oy, "rock", variant);
+    }
+  }
+
+  // 2. Reeds: placed along water edges, more frequent near islands
+  for (const edge of edgeLakeTiles) {
+    // Check if near an island (within normalized ellipse distance) — higher reed chance near islands
+    let nearIsland = false;
+    for (const island of islands) {
+      const dx = (edge.x - island.cx) / island.rx;
+      const dy = (edge.y - island.cy) / island.ry;
+      if (dx * dx + dy * dy < 1.8) { nearIsland = true; break; }
+    }
+    const reedChance = nearIsland ? 0.18 : 0.10; // 18% near islands, 10% at outer lake edge
+    if (Math.random() < reedChance) {
+      const variant = Math.random() < 0.5 ? 0 : 1;
+      addWaterDeco(edge.x, edge.y, "reed", variant);
+    }
+  }
+
+  // 3. Lily pads: scattered randomly on open water
+  for (const tile of lakeTiles) {
+    if (Math.random() < 0.04) { // ~4% chance
+      const variant = Math.floor(Math.random() * 4);
+      addWaterDeco(tile.x, tile.y, "lilypad", variant);
+    }
+  }
+
+  // Final pass: remove any foliage that overlaps with stone circle exclusion zones
+  const filteredFoliage = allFoliage.filter(
+    (f) => !isNearStoneCircle(f.x, f.y, f.width, f.height)
+  );
+
   return {
     map: newMap,
-    foliage: allFoliage,
+    foliage: filteredFoliage,
     fencePositions: fences,
     glowingCowPenBounds,
     chickenCoopPositions: coopPositions,
     animals: newAnimals,
     decorations: newDecorations,
+    dockSegments,
+    boats,
+    stoneCircles,
+    npcs,
+    waterDecorations,
     playerPos: { x: centerX, y: centerY },
   };
 }

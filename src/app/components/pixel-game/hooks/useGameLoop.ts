@@ -1,7 +1,7 @@
 import { useEffect, MutableRefObject } from "react";
 import { FoliageInstance } from "../maps/foliageTilesetMap";
-import { MAP_WIDTH, MAP_HEIGHT } from "../constants";
-import type { Tile, Position, House, Decoration } from "../types";
+import { MAP_WIDTH, MAP_HEIGHT, SIGN_X, SIGN_Y } from "../constants";
+import type { Tile, Position, House, Decoration, Animal } from "../types";
 
 interface UseGameLoopOptions {
   keysPressed: MutableRefObject<Set<string>>;
@@ -12,11 +12,14 @@ interface UseGameLoopOptions {
   fencePositions: MutableRefObject<Array<{ x: number; y: number }>>;
   chickenCoopPositions: MutableRefObject<Array<{ x: number; y: number }>>;
   decorations: MutableRefObject<Decoration[]>;
+  animals: MutableRefObject<Animal[]>;
   house: MutableRefObject<House | null>;
   map: Tile[][];
   setPlayerPos: (pos: Position) => void;
   setPlayerDirection: (dir: number) => void;
   setPlayerFrame: (fn: (f: number) => number) => void;
+  setPlayerIsMoving: (moving: boolean) => void;
+  frozen?: boolean;
 }
 
 export function useGameLoop({
@@ -28,14 +31,27 @@ export function useGameLoop({
   fencePositions,
   chickenCoopPositions,
   decorations,
+  animals,
   house,
   map,
   setPlayerPos,
   setPlayerDirection,
   setPlayerFrame,
+  setPlayerIsMoving,
+  frozen,
 }: UseGameLoopOptions) {
   useEffect(() => {
     const gameLoop = setInterval(() => {
+      // If frozen (e.g. modal open), just idle animate — don't move
+      if (frozen) {
+        setPlayerIsMoving(false);
+        playerFrameCounter.current++;
+        if (playerFrameCounter.current % 10 === 0) {
+          setPlayerFrame((f: number) => (f + 1) % 8);
+        }
+        return;
+      }
+
       const keys = keysPressed.current;
 
       // Calculate movement vector
@@ -73,7 +89,7 @@ export function useGameLoop({
           playerPos.y >= house.current.y &&
           playerPos.y < house.current.y + house.current.height;
 
-        const speed = isInsideHouse ? 0.08 / 3 : 0.08;
+        const speed = isInsideHouse ? 0.06 / 3 : 0.06;
         deltaX = (deltaX / magnitude) * speed;
         deltaY = (deltaY / magnitude) * speed;
       }
@@ -82,19 +98,19 @@ export function useGameLoop({
       let newY = playerPos.y + deltaY;
 
       if (actuallyMoving) {
+        setPlayerIsMoving(true);
         setPlayerDirection(newDirection);
         playerFrameCounter.current++;
         if (playerFrameCounter.current % 6 === 0) {
-          setPlayerFrame((f: number) => {
-            const frameSequence = [2, 3];
-            const currentIndex = frameSequence.indexOf(f);
-            const nextIndex = (currentIndex + 1) % frameSequence.length;
-            return frameSequence[nextIndex];
-          });
+          setPlayerFrame((f: number) => (f + 1) % 8);
         }
       } else {
-        setPlayerFrame((_: number) => 2);
-        playerFrameCounter.current = 0;
+        setPlayerIsMoving(false);
+        // Idle animation: cycle through 8 idle frames slowly
+        playerFrameCounter.current++;
+        if (playerFrameCounter.current % 10 === 0) {
+          setPlayerFrame((f: number) => (f + 1) % 8);
+        }
       }
 
       if (!actuallyMoving) return;
@@ -143,9 +159,9 @@ export function useGameLoop({
       if (canMove) {
         for (const decoration of decorations.current) {
           if (decoration.type === "fountain") {
-            const fountainCollisionX = decoration.x + 1.5;
+            const fountainCollisionX = decoration.x + 1.5 - 0.5;
             const fountainCollisionY = decoration.y + 2;
-            const collisionWidth = 3;
+            const collisionWidth = 3 + 1;
             const collisionHeight = 2;
 
             if (
@@ -158,12 +174,12 @@ export function useGameLoop({
               break;
             }
           } else if (decoration.type === "campfire") {
-            const campfireCenterX = decoration.x + 1;
+            const campfireCenterX = decoration.x + 1 - 0.5;
             const campfireCenterY = decoration.y + 1;
 
             if (
               newX >= campfireCenterX &&
-              newX < campfireCenterX + 2 &&
+              newX < campfireCenterX + 2 + 1 &&
               newY >= campfireCenterY &&
               newY < campfireCenterY + 2
             ) {
@@ -181,6 +197,17 @@ export function useGameLoop({
               break;
             }
           }
+        }
+      }
+
+      // Check collision with sign
+      if (canMove) {
+        const signCenterX = SIGN_X + 0.5;
+        const signCenterY = SIGN_Y + 0.5;
+        const dx = Math.abs(newX - signCenterX);
+        const dy = Math.abs(newY - signCenterY);
+        if (dx < playerRadius + 0.4 && dy < playerRadius + 0.4) {
+          canMove = false;
         }
       }
 
@@ -208,8 +235,8 @@ export function useGameLoop({
 
         if (atExteriorDoor) {
           setPlayerPos({
-            x: h.interiorX + h.interiorDoorX,
-            y: h.interiorY + h.interiorDoorY - 1,
+            x: h.interiorX + h.interiorDoorX + 0.5,
+            y: h.interiorY + h.interiorDoorY - 1 + 0.5,
           });
           house.current.doorOpen = true;
           return;
@@ -222,8 +249,8 @@ export function useGameLoop({
 
         if (atInteriorDoor) {
           setPlayerPos({
-            x: h.x + h.doorX,
-            y: h.y + h.doorY + 1,
+            x: h.x + h.doorX + 0.5,
+            y: h.y + h.doorY + 1 + 0.5,
           });
           return;
         }
@@ -322,13 +349,40 @@ export function useGameLoop({
           tileX < MAP_WIDTH
         ) {
           const tile = map[tileY]?.[tileX];
-          if (tile !== "water" && tile !== "building") {
-            setPlayerPos({ x: newX, y: newY });
+          if (tile !== "water" && tile !== "building" && tile !== "lake") {
+            // If player is on a dock tile, skip the water proximity check
+            if (tile === "dock") {
+              setPlayerPos({ x: newX, y: newY });
+            } else {
+              // Check if player is within 0.5 tiles of any lake tile
+              let nearLake = false;
+              const checkRadius = 0.5;
+              for (let cy = Math.floor(newY - checkRadius); cy <= Math.floor(newY + checkRadius); cy++) {
+                for (let cx = Math.floor(newX - checkRadius); cx <= Math.floor(newX + checkRadius); cx++) {
+                  if (cy >= 0 && cy < MAP_HEIGHT && cx >= 0 && cx < MAP_WIDTH) {
+                    const t = map[cy]?.[cx];
+                    if (t === "lake" || t === "water") {
+                      // Check sub-tile distance
+                      const closestX = Math.max(cx, Math.min(cx + 1, newX));
+                      const closestY = Math.max(cy, Math.min(cy + 1, newY));
+                      const distX = Math.abs(newX - closestX);
+                      const distY = Math.abs(newY - closestY);
+                      if (distX < checkRadius && distY < checkRadius) {
+                        nearLake = true;
+                      }
+                    }
+                  }
+                }
+              }
+              if (!nearLake) {
+                setPlayerPos({ x: newX, y: newY });
+              }
+            }
           }
         }
       }
     }, 16);
 
     return () => clearInterval(gameLoop);
-  }, [playerPos, map, playerDirection]);
+  }, [playerPos, map, playerDirection, frozen]);
 }

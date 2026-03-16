@@ -20,6 +20,13 @@ export interface GameSprites {
   forestTreeDarker: HTMLImageElement | null;
   extraTreesTileset: HTMLImageElement | null;
   statueTileset: HTMLImageElement | null;
+  waterTileset: HTMLImageElement | null;
+  dockTileset: HTMLImageElement | null;
+  stonePathTileset: HTMLImageElement | null;
+  boatTileset: HTMLImageElement | null;
+  waterDecoTileset: HTMLImageElement | null;
+  dialogueTileset: HTMLImageElement | null;
+  signTileset: HTMLImageElement | null;
 }
 
 export function useSprites() {
@@ -44,6 +51,13 @@ export function useSprites() {
   const forestTreeDarker = useRef<HTMLImageElement | null>(null);
   const extraTreesTileset = useRef<HTMLImageElement | null>(null);
   const statueTileset = useRef<HTMLImageElement | null>(null);
+  const waterTileset = useRef<HTMLImageElement | null>(null);
+  const dockTileset = useRef<HTMLImageElement | null>(null);
+  const stonePathTileset = useRef<HTMLImageElement | null>(null);
+  const boatTileset = useRef<HTMLImageElement | null>(null);
+  const waterDecoTileset = useRef<HTMLImageElement | null>(null);
+  const dialogueTileset = useRef<HTMLImageElement | null>(null);
+  const signTileset = useRef<HTMLImageElement | null>(null);
 
   // Load all sprites
   useEffect(() => {
@@ -69,15 +83,20 @@ export function useSprites() {
       { ref: forestTreeDarker, url: ASSET_URLS.forestTreeDarker, name: "forest tree darker" },
       { ref: extraTreesTileset, url: ASSET_URLS.extraTreesTileset, name: "extra trees tileset" },
       { ref: statueTileset, url: ASSET_URLS.statueTileset, name: "statue tileset" },
+      { ref: waterTileset, url: ASSET_URLS.waterTileset, name: "water tileset" },
+      { ref: dockTileset, url: ASSET_URLS.dockTileset, name: "dock tileset" },
+      { ref: stonePathTileset, url: ASSET_URLS.stonePathTileset, name: "stone path tileset" },
+      { ref: boatTileset, url: ASSET_URLS.boatTileset, name: "boat tileset" },
+      { ref: waterDecoTileset, url: ASSET_URLS.waterDecoTileset, name: "water deco tileset" },
+      { ref: dialogueTileset, url: ASSET_URLS.dialogueTileset, name: "dialogue tileset" },
+      { ref: signTileset, url: ASSET_URLS.signTileset, name: "sign tileset" },
     ];
     
     const totalSprites = spriteEntries.length;
 
     const onSpriteLoad = (name: string) => {
       loadedCount++;
-      console.log(`[Sprites] Loaded: ${name} (${loadedCount}/${totalSprites})`);
       if (loadedCount >= totalSprites) {
-        console.log("[Sprites] All sprites loaded!");
         setSpritesLoaded(true);
       }
     };
@@ -126,6 +145,13 @@ export function useSprites() {
       forestTreeDarker: forestTreeDarker.current,
       extraTreesTileset: extraTreesTileset.current,
       statueTileset: statueTileset.current,
+      waterTileset: waterTileset.current,
+      dockTileset: dockTileset.current,
+      stonePathTileset: stonePathTileset.current,
+      boatTileset: boatTileset.current,
+      waterDecoTileset: waterDecoTileset.current,
+      dialogueTileset: dialogueTileset.current,
+      signTileset: signTileset.current,
     },
   };
 }

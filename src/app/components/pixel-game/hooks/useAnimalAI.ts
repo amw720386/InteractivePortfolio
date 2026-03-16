@@ -28,6 +28,22 @@ export function useAnimalAI({
     // Helper: check if a position is clear of all collidables (1-tile buffer)
     const isAnimalTargetClear = (px: number, py: number): boolean => {
       const buffer = 1.0;
+
+      // Check if near any water/lake tile (within 2 tiles)
+      const waterBuffer = 2;
+      for (let dy = -waterBuffer; dy <= waterBuffer; dy++) {
+        for (let dx = -waterBuffer; dx <= waterBuffer; dx++) {
+          const checkX = Math.floor(px) + dx;
+          const checkY = Math.floor(py) + dy;
+          if (checkX >= 0 && checkX < MAP_WIDTH && checkY >= 0 && checkY < MAP_HEIGHT) {
+            const t = map[checkY]?.[checkX];
+            if (t === "water" || t === "lake") {
+              return false;
+            }
+          }
+        }
+      }
+
       // Check foliage (trees)
       for (const item of foliage.current) {
         if (item.type === "tree") {
@@ -241,9 +257,26 @@ export function useAnimalAI({
 
             if (tileY >= 0 && tileY < MAP_HEIGHT && tileX >= 0 && tileX < MAP_WIDTH && canMoveAnimal) {
               const tile = map[tileY]?.[tileX];
-              if (tile !== "water" && tile !== "tree" && tile !== "building") {
-                animal.x = newX;
-                animal.y = newY;
+              if (tile !== "water" && tile !== "tree" && tile !== "building" && tile !== "lake" && tile !== "dock") {
+                // Check if animal is within 2 tiles of any water/lake tile
+                let nearWater = false;
+                const animalWaterBuffer = 2;
+                for (let cy = Math.floor(newY) - animalWaterBuffer; cy <= Math.floor(newY) + animalWaterBuffer; cy++) {
+                  for (let cx = Math.floor(newX) - animalWaterBuffer; cx <= Math.floor(newX) + animalWaterBuffer; cx++) {
+                    if (cy >= 0 && cy < MAP_HEIGHT && cx >= 0 && cx < MAP_WIDTH) {
+                      const t = map[cy]?.[cx];
+                      if (t === "lake" || t === "water") {
+                        nearWater = true;
+                      }
+                    }
+                  }
+                }
+                if (!nearWater) {
+                  animal.x = newX;
+                  animal.y = newY;
+                } else {
+                  redirectAnimal(animal);
+                }
               } else {
                 redirectAnimal(animal);
               }
@@ -251,11 +284,12 @@ export function useAnimalAI({
               redirectAnimal(animal);
             }
 
-            if (Math.abs(dx) > Math.abs(dy)) {
-              animal.direction = dx > 0 ? 3 : 2;
-            } else {
-              animal.direction = dy > 0 ? 0 : 1;
+            if (dx > 0.01) {
+              animal.direction = 3; // facing right
+            } else if (dx < -0.01) {
+              animal.direction = 2; // facing left
             }
+            // else: purely vertical movement — keep current direction
 
             // Slower animation tick for animals
             if (frameCounter % 12 === 0) {

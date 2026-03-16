@@ -3,6 +3,8 @@ export type Tile =
   | "grass"
   | "grass2"
   | "water"
+  | "lake"
+  | "dock"
   | "path"
   | "tree"
   | "building"
@@ -74,4 +76,11 @@ export interface Decoration {
   y: number;
   type: "egg" | "bread" | "fountain" | "campfire" | "chickenCoop" | "well";
   variant: number;
+}
+
+export interface NPC {
+  x: number;
+  y: number;
+  direction: number; // 0=down, 1=up, 2=left, 3=right
+  frame: number;
 }

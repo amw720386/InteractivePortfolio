@@ -66,7 +66,7 @@ export const FOLIAGE_TILESET = {
 } as const;
 
 // Tree type definitions for easy reference
-export type TreeType = 'small' | 'medium' | 'fruit' | 'forest' | 'forestDarker' | 'eucalyptus' | 'willow';
+export type TreeType = 'small' | 'medium' | 'fruit' | 'forest' | 'forestDarker' | 'eucalyptus' | 'pine';
 export type FoliageType = 'tree' | 'bush' | 'mushroom' | 'flower' | 'sunflower' | 'stump';
 
 export interface TreeInstance {
