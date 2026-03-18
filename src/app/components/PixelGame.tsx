@@ -91,6 +91,7 @@ export function PixelGame() {
   const [modalOpen, setModalOpen] = useState(false);
   const [projectsModalOpen, setProjectsModalOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const modalOpenedAt = useRef(0);
   const [dialogueOpen, setDialogueOpen] = useState(false);
   const [dialogueText, setDialogueText] = useState("");
   const dialogueSpeakerRef = useRef<Animal | null>(null);
@@ -2473,9 +2474,10 @@ export function PixelGame() {
       const isRaised = phase < 1500;
       const yOff = isRaised ? -3 : 0;
 
-      const drawPromptAt = (sx: number, sy: number) => {
+      const drawPromptAt = (sx: number, bottomWorldY: number) => {
         const px = Math.round(sx - destW / 2);
-        const py = Math.round(sy - destH - 8 + yOff);
+        // Position prompt so its bottom edge is at bottomWorldY in world space
+        const py = Math.round((bottomWorldY - targetCameraY) * TILE_SIZE - destH + yOff);
 
         ctx.save();
         ctx.imageSmoothingEnabled = false;
@@ -2504,8 +2506,7 @@ export function PixelGame() {
         const dy = playerPos.y - npc.y;
         if (Math.sqrt(dx * dx + dy * dy) < INTERACT_RANGE) {
           const sx = (npc.x - targetCameraX) * TILE_SIZE;
-          const sy = (npc.y - targetCameraY) * TILE_SIZE - TILE_SIZE;
-          drawPromptAt(sx, sy);
+          drawPromptAt(sx, npc.y - 1);
         }
       }
 
@@ -2518,8 +2519,7 @@ export function PixelGame() {
         const dy = playerPos.y - dwy;
         if (Math.sqrt(dx * dx + dy * dy) < 1.8) {
           const sx = (dwx - targetCameraX) * TILE_SIZE + TILE_SIZE * 0.5;
-          const sy = (dwy - targetCameraY) * TILE_SIZE;
-          drawPromptAt(sx, sy);
+          drawPromptAt(sx, dwy - 0.5);
         }
       }
 
@@ -2532,8 +2532,7 @@ export function PixelGame() {
           const dy = playerPos.y - fcy;
           if (Math.sqrt(dx * dx + dy * dy) < INTERACT_RANGE) {
             const sx = (fcx - targetCameraX) * TILE_SIZE;
-            const sy = (dec.y - targetCameraY) * TILE_SIZE;
-            drawPromptAt(sx, sy);
+            drawPromptAt(sx, dec.y + 2);
           }
         }
       }
@@ -2544,8 +2543,7 @@ export function PixelGame() {
         const dy = playerPos.y - SIGN_Y;
         if (Math.sqrt(dx * dx + dy * dy) < 4.5) {
           const sx = (SIGN_X - targetCameraX) * TILE_SIZE + TILE_SIZE * 0.5;
-          const sy = (SIGN_Y - targetCameraY) * TILE_SIZE;
-          drawPromptAt(sx, sy);
+          drawPromptAt(sx, SIGN_Y - 0.5);
         }
       }
 
@@ -2563,8 +2561,7 @@ export function PixelGame() {
             const dy = playerPos.y - animal.y;
             if (Math.sqrt(dx * dx + dy * dy) < 3) {
               const sx = (animal.x - targetCameraX) * TILE_SIZE;
-              const sy = (animal.y - targetCameraY) * TILE_SIZE - TILE_SIZE;
-              drawPromptAt(sx, sy);
+              drawPromptAt(sx, animal.y - 1.5);
             }
           }
         }
@@ -3027,6 +3024,7 @@ export function PixelGame() {
       const dy = playerPos.y - SIGN_Y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 4.5) {
+        modalOpenedAt.current = Date.now();
         setHelpModalOpen(true);
         return;
       }
@@ -3041,6 +3039,7 @@ export function PixelGame() {
       const dy = playerPos.y - drawerWorldY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 1.8) {
+        modalOpenedAt.current = Date.now();
         setProjectsModalOpen(true);
         return;
       }
@@ -3056,8 +3055,7 @@ export function PixelGame() {
         const dy = playerPos.y - fountainCenterY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 3.5) {
-          // TODO: Replace with your actual resume URL
-          window.open("https://your-resume-url.com/resume.pdf", "_blank", "noopener,noreferrer");
+          window.open("https://ahamedwajibu.com/resume", "_blank", "noopener,noreferrer");
           return;
         }
       }
@@ -3069,6 +3067,7 @@ export function PixelGame() {
       const dy = playerPos.y - npc.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 2.5) {
+        modalOpenedAt.current = Date.now();
         setModalOpen(true);
         return;
       }
@@ -3143,9 +3142,9 @@ export function PixelGame() {
           visible={!modalOpen}
         />
       )}
-      <GameModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
-      <ProjectsModal isOpen={projectsModalOpen} onClose={() => setProjectsModalOpen(false)} />
-      <HelpModal isOpen={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
+      <GameModal isOpen={modalOpen} onClose={() => { if (Date.now() - modalOpenedAt.current > 500) setModalOpen(false); }} />
+      <ProjectsModal isOpen={projectsModalOpen} onClose={() => { if (Date.now() - modalOpenedAt.current > 500) setProjectsModalOpen(false); }} />
+      <HelpModal isOpen={helpModalOpen} onClose={() => { if (Date.now() - modalOpenedAt.current > 500) setHelpModalOpen(false); }} />
     </div>
   );
 }

@@ -44,9 +44,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(0, 0, 0, 0.6)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
+            background: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
           }}
         >
           <motion.div
@@ -63,24 +63,14 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               width: "min(380px, 90vw)",
               borderRadius: 20,
               overflow: "hidden",
-              background:
-                "linear-gradient(135deg, rgba(20,40,30,0.92) 0%, rgba(15,35,25,0.95) 100%)",
-              border: "1px solid rgba(134,239,172,0.12)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              backdropFilter: "blur(40px)",
+              WebkitBackdropFilter: "blur(40px)",
               boxShadow:
-                "0 32px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(134,239,172,0.08)",
+                "0 32px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}
           >
-            {/* Gradient accent bar */}
-            <div
-              style={{
-                height: 3,
-                background:
-                  "linear-gradient(90deg, #4ade80, #22c55e, #16a34a)",
-              }}
-            />
-
             {/* Close button */}
             <motion.button
               whileHover={{ rotate: 90, scale: 1.1 }}
@@ -93,9 +83,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 width: 32,
                 height: 32,
                 borderRadius: "50%",
-                border: "1px solid rgba(134,239,172,0.15)",
-                background: "rgba(134,239,172,0.06)",
-                color: "rgba(255,255,255,0.6)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.5)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -140,7 +130,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 <div
                   style={{
                     height: 1,
-                    background: "rgba(134,239,172,0.1)",
+                    background: "rgba(255,255,255,0.08)",
                     margin: "2px 0",
                   }}
                 />
@@ -156,8 +146,8 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                       width: 36,
                       height: 36,
                       borderRadius: 10,
-                      background: "rgba(34,197,94,0.15)",
-                      border: "1px solid rgba(34,197,94,0.3)",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.1)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -172,7 +162,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   <span
                     style={{
                       fontFamily: FONT_BODY,
-                      color: "rgba(255,255,255,0.6)",
+                      color: "rgba(255,255,255,0.5)",
                       fontSize: 13,
                       lineHeight: 1.5,
                     }}
@@ -196,14 +186,14 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   marginTop: 18,
                   padding: "12px 14px",
                   borderRadius: 12,
-                  background: "rgba(34,197,94,0.08)",
-                  border: "1px solid rgba(34,197,94,0.15)",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
                 <p
                   style={{
                     fontFamily: FONT_BODY,
-                    color: "rgba(255,255,255,0.55)",
+                    color: "rgba(255,255,255,0.45)",
                     fontSize: 12,
                     margin: 0,
                     lineHeight: 1.6,
@@ -211,7 +201,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 >
                   <span
                     style={{
-                      color: "rgba(74,222,128,0.9)",
+                      color: "rgba(255,255,255,0.8)",
                     }}
                   >
                     Tip:
@@ -246,7 +236,7 @@ function ControlRow({
     <div
       style={{
         display: "flex",
-        alignItems: "flex-start",
+        alignItems: "center",
         gap: 12,
         flexWrap: "wrap",
       }}
@@ -256,7 +246,6 @@ function ControlRow({
           display: "flex",
           gap: 4,
           flexShrink: 0,
-          flexWrap: "wrap",
         }}
       >
         {keys.map((key) => (
@@ -266,7 +255,7 @@ function ControlRow({
           <>
             <span
               style={{
-                color: "rgba(255,255,255,0.25)",
+                color: "rgba(255,255,255,0.2)",
                 fontSize: 12,
                 margin: "0 2px",
                 alignSelf: "center",
@@ -283,10 +272,8 @@ function ControlRow({
       <span
         style={{
           fontFamily: FONT_BODY,
-          color: "rgba(255,255,255,0.6)",
+          color: "rgba(255,255,255,0.5)",
           fontSize: 13,
-          flex: "1 1 auto",
-          minWidth: 0,
         }}
       >
         {description}
@@ -307,12 +294,12 @@ function KeyCap({ label }: { label: string }) {
         padding: "0 6px",
         borderRadius: 7,
         background:
-          "linear-gradient(180deg, rgba(134,239,172,0.12) 0%, rgba(134,239,172,0.06) 100%)",
-        border: "1px solid rgba(134,239,172,0.18)",
+          "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
+        border: "1px solid rgba(255,255,255,0.12)",
         boxShadow:
-          "0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(134,239,172,0.1)",
+          "0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
         fontFamily: FONT_BODY,
-        color: "rgba(255,255,255,0.85)",
+        color: "rgba(255,255,255,0.8)",
         fontSize: 12,
         fontWeight: 600,
       }}

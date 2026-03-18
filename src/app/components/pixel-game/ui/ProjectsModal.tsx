@@ -64,7 +64,7 @@ function ProjectCard({
               height: "100%",
               objectFit: "cover",
               display: "block",
-              filter: hovered ? "brightness(1.1) saturate(1.1)" : "brightness(0.8)",
+              filter: hovered ? "brightness(1.1) saturate(0.9)" : "brightness(0.7) saturate(0.8)",
               transition: "filter 0.4s ease, transform 0.4s ease",
               transform: hovered ? "scale(1.05)" : "scale(1)",
             }}
@@ -74,7 +74,7 @@ function ProjectCard({
             style={{
               position: "absolute",
               inset: 0,
-              background: "linear-gradient(to top, rgba(15,15,20,0.9) 0%, transparent 60%)",
+              background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%)",
             }}
           />
           {/* Status badge */}
@@ -92,19 +92,12 @@ function ProjectCard({
               fontFamily: FONT_BODY,
               fontWeight: 500,
               letterSpacing: 0.3,
-              background:
-                project.status === "complete"
-                  ? "rgba(34,197,94,0.15)"
-                  : "rgba(251,191,36,0.15)",
+              background: "rgba(255,255,255,0.08)",
               color:
                 project.status === "complete"
-                  ? "rgb(134,239,172)"
-                  : "rgb(253,224,71)",
-              border: `1px solid ${
-                project.status === "complete"
-                  ? "rgba(34,197,94,0.25)"
-                  : "rgba(251,191,36,0.25)"
-              }`,
+                  ? "rgba(255,255,255,0.8)"
+                  : "rgba(255,255,255,0.55)",
+              border: "1px solid rgba(255,255,255,0.12)",
               backdropFilter: "blur(8px)",
             }}
           >
@@ -135,7 +128,7 @@ function ProjectCard({
                 transition: "opacity 0.3s ease",
               }}
             >
-              <ExternalLink size={14} color="rgba(255,255,255,0.8)" />
+              <ExternalLink size={14} color="rgba(255,255,255,0.7)" />
             </div>
           )}
         </div>
@@ -161,7 +154,7 @@ function ProjectCard({
         <p
           style={{
             fontFamily: FONT_BODY,
-            color: "rgba(255,255,255,0.45)",
+            color: "rgba(255,255,255,0.4)",
             fontSize: 12,
             margin: "0 0 12px",
             fontWeight: 400,
@@ -186,7 +179,7 @@ function ProjectCard({
                 fontFamily: FONT_BODY,
                 fontSize: 10,
                 fontWeight: 500,
-                color: "rgba(255,255,255,0.6)",
+                color: "rgba(255,255,255,0.55)",
                 padding: "3px 8px",
                 borderRadius: 6,
                 background: "rgba(255,255,255,0.06)",
@@ -203,7 +196,7 @@ function ProjectCard({
         <p
           style={{
             fontFamily: FONT_BODY,
-            color: "rgba(255,255,255,0.55)",
+            color: "rgba(255,255,255,0.45)",
             fontSize: 12,
             lineHeight: 1.6,
             margin: 0,
@@ -275,8 +268,8 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0, 0, 0, 0.7)",
-              backdropFilter: "blur(8px)",
+              background: "rgba(0, 0, 0, 0.5)",
+              backdropFilter: "blur(12px)",
               zIndex: 998,
               cursor: "pointer",
             }}
@@ -296,11 +289,12 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
               flexDirection: "column",
               borderRadius: compact ? 20 : 24,
               overflow: "hidden",
-              background:
-                "linear-gradient(145deg, rgba(18,28,22,0.95) 0%, rgba(10,18,12,0.98) 100%)",
-              border: "1px solid rgba(134,239,172,0.08)",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(40px)",
+              WebkitBackdropFilter: "blur(40px)",
               boxShadow:
-                "0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(134,239,172,0.05), inset 0 1px 0 rgba(134,239,172,0.08)",
+                "0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
             }}
           >
             {/* Header bar */}
@@ -310,9 +304,9 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: compact ? "16px 20px" : "20px 28px",
-                borderBottom: "1px solid rgba(134,239,172,0.08)",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
                 flexShrink: 0,
-                background: "rgba(134,239,172,0.02)",
+                background: "rgba(255,255,255,0.02)",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -332,7 +326,7 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
                   <p
                     style={{
                       fontFamily: FONT_BODY,
-                      color: "rgba(255,255,255,0.35)",
+                      color: "rgba(255,255,255,0.3)",
                       fontSize: 12,
                       margin: 0,
                       fontWeight: 400,
@@ -355,8 +349,8 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  background: "rgba(134,239,172,0.06)",
-                  border: "1px solid rgba(134,239,172,0.1)",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -365,18 +359,18 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.background =
-                    "rgba(239,68,68,0.15)";
+                    "rgba(255,255,255,0.12)";
                   (e.currentTarget as HTMLElement).style.borderColor =
-                    "rgba(239,68,68,0.3)";
+                    "rgba(255,255,255,0.2)";
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.background =
-                    "rgba(134,239,172,0.06)";
+                    "rgba(255,255,255,0.06)";
                   (e.currentTarget as HTMLElement).style.borderColor =
-                    "rgba(134,239,172,0.1)";
+                    "rgba(255,255,255,0.08)";
                 }}
               >
-                <X size={16} color="rgba(255,255,255,0.6)" />
+                <X size={16} color="rgba(255,255,255,0.5)" />
               </motion.div>
             </div>
 
@@ -392,7 +386,7 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
                 overflowX: "hidden",
                 padding: compact ? "16px 16px 24px" : "24px 28px 32px",
                 scrollbarWidth: "thin",
-                scrollbarColor: "rgba(134,239,172,0.12) transparent",
+                scrollbarColor: "rgba(255,255,255,0.08) transparent",
               }}
             >
               {/* Masonry columns */}
@@ -408,7 +402,7 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
               </div>
             </div>
 
-            {/* Bottom glow */}
+            {/* Bottom fade */}
             <div
               style={{
                 position: "absolute",
@@ -417,7 +411,7 @@ export function ProjectsModal({ isOpen, onClose }: ProjectsModalProps) {
                 right: 0,
                 height: 80,
                 background:
-                  "linear-gradient(to top, rgba(10,18,12,0.95), transparent)",
+                  "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
                 pointerEvents: "none",
                 borderRadius: "0 0 24px 24px",
               }}
